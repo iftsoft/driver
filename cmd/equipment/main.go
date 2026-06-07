@@ -43,7 +43,14 @@ func Run(ctx context.Context, log *slog.Logger) error {
 	defer callbackCli.Close()
 
 	appCfg := &config.AppConfig{}
-	sysDriver := system.NewSystemDriver(log, appCfg, callbackCli)
+	devDriver := system.NewDeviceDriver(log,
+		system.WithDeviceConfig(appCfg.Device),
+		system.WithDeviceCallback(callbackCli),
+	)
+	sysDriver := system.NewSystemDriver(log,
+		system.WithSystemCallback(callbackCli),
+		system.WithDeviceDriver(devDriver),
+	)
 
 	// gRPC Server init
 	address := "127.0.0.1:9098"
