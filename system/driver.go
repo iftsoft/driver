@@ -11,38 +11,39 @@ import (
 	"github.com/iftsoft/linker/model"
 
 	"github.com/iftsoft/driver/config"
+	"github.com/iftsoft/driver/device"
 )
 
-type DeviceCallback interface {
-	model.SystemCallback
-	model.DeviceCallback
-	model.PrinterCallback
-	model.ReaderCallback
-	model.ValidatorCallback
-}
-
-type DeviceWorker interface {
-	InitDevice(ctx context.Context) error
-	StartDevice(ctx context.Context, query *model.SystemConfig) error
-	StopDevice(ctx context.Context) error
-	CheckDevice(ctx context.Context) (*model.SystemMetrics, error)
-	DeviceTimer(ctx context.Context, unix int64) error
-}
-
-type DeviceCreator interface {
-	CreateDevice(log *slog.Logger, cfg *config.DeviceConfig) (any, error)
-}
+//type DeviceCallback interface {
+//	//model.SystemCallback
+//	model.DeviceCallback
+//	model.PrinterCallback
+//	model.ReaderCallback
+//	model.ValidatorCallback
+//}
+//
+//type DeviceWorker interface {
+//	InitDevice(ctx context.Context) error
+//	StartDevice(ctx context.Context, query *model.SystemConfig) error
+//	StopDevice(ctx context.Context) error
+//	CheckDevice(ctx context.Context) (*model.SystemMetrics, error)
+//	DeviceTimer(ctx context.Context, unix int64) error
+//}
+//
+//type DeviceCreator interface {
+//	CreateDevice(log *slog.Logger, cfg *config.DeviceConfig, cb DeviceCallback) (any, error)
+//}
 
 type DeviceDriver struct {
 	log       *slog.Logger
 	config    *config.DeviceConfig
-	callback  DeviceCallback
-	creator   DeviceCreator
+	callback  device.Callback
+	creator   device.DeviceCreator
+	worker    device.DeviceWorker
 	device    model.DeviceManager
 	printer   model.PrinterManager
 	reader    model.ReaderManager
 	validator model.ValidatorManager
-	worker    DeviceWorker
 	mutex     sync.RWMutex
 	done      chan struct{}
 	devName   string
@@ -66,7 +67,7 @@ func NewDeviceDriver(log *slog.Logger, opts ...DriverOption) *DeviceDriver {
 	return &drv
 }
 
-func WithDeviceCallback(cb DeviceCallback) DriverOption {
+func WithDeviceCallback(cb device.Callback) DriverOption {
 	return func(d *DeviceDriver) {
 		d.callback = cb
 	}
@@ -75,6 +76,12 @@ func WithDeviceCallback(cb DeviceCallback) DriverOption {
 func WithDeviceConfig(cfg *config.DeviceConfig) DriverOption {
 	return func(d *DeviceDriver) {
 		d.config = cfg
+	}
+}
+
+func WithDeviceCreator(creator device.DeviceCreator) DriverOption {
+	return func(d *DeviceDriver) {
+		d.creator = creator
 	}
 }
 
@@ -108,9 +115,9 @@ func (d *DeviceDriver) CreateDevice(ctx context.Context, query *model.SystemConf
 	}
 	d.clearManagers()
 
-	object, err := d.creator.CreateDevice(d.log, d.config)
+	object, err := d.creator.CreateDevice(d.log, d.config, d.callback)
 	if err != nil {
-		return fmt.Errorf("create object error: %w", err)
+		return fmt.Errorf("create device error: %w", err)
 	}
 	_, err = d.initManagers(object)
 	if err != nil {
@@ -169,7 +176,7 @@ func (d *DeviceDriver) initManagers(object interface{}) (model.DevScopeMask, err
 	defer d.mutex.Unlock()
 
 	// Setup Worker driver interface
-	if drv, ok := object.(DeviceWorker); ok {
+	if drv, ok := object.(device.DeviceWorker); ok {
 		d.worker = drv
 		supported |= model.ScopeFlagSystem
 	}

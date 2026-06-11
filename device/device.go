@@ -5,14 +5,14 @@ import (
 	"log/slog"
 
 	"github.com/iftsoft/linker/model"
-)
 
-type Callback interface {
-	model.DeviceCallback
-}
+	"github.com/iftsoft/driver/config"
+)
 
 type BaseEngine struct {
 	Log       *slog.Logger
+	Config    *config.DeviceConfig
+	Callback  Callback
 	DevName   string
 	DevState  model.DevState
 	DevError  model.DevError
@@ -20,7 +20,6 @@ type BaseEngine struct {
 	DevAction model.DevAction
 	DevInform string
 	DevReply  string
-	Callback  Callback
 }
 
 func (be *BaseEngine) ClearDevice() {
@@ -89,7 +88,7 @@ func (be *BaseEngine) RunStateChanged(ctx context.Context, state model.DevState)
 			err = be.Callback.StateChanged(ctx, query)
 		}
 		if be.Log != nil {
-			be.Log.Debug("Callback StateChanged: %s", query.String())
+			be.Log.Debug("Callback StateChanged", slog.Any("query", query))
 		}
 		be.DevState = state
 	}
@@ -110,7 +109,7 @@ func (be *BaseEngine) RunActionPrompt(ctx context.Context, prompt model.DevPromp
 			err = be.Callback.ActionPrompt(ctx, query)
 		}
 		if be.Log != nil {
-			be.Log.Debug("Callback ActionPrompt: %s", query.String())
+			be.Log.Debug("Callback ActionPrompt", slog.Any("query", query))
 		}
 	}
 	return err
@@ -130,7 +129,7 @@ func (be *BaseEngine) RunReaderReturn(ctx context.Context, inform string) error 
 			err = be.Callback.ReaderReturn(ctx, query)
 		}
 		if be.Log != nil {
-			be.Log.Debug("Callback ReaderReturn: %s", query.String())
+			be.Log.Debug("Callback ReaderReturn", slog.Any("query", query))
 		}
 	}
 	return err
