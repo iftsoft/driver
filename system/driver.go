@@ -115,7 +115,9 @@ func (d *DeviceDriver) CreateDevice(ctx context.Context, query *model.SystemConf
 	}
 	d.clearManagers()
 
-	object, err := d.creator.CreateDevice(d.log, d.config, d.callback)
+	object, err := d.creator.CreateDevice(device.CreatorParams{
+		Logger: d.log, Config: d.config, Callback: d.callback,
+	})
 	if err != nil {
 		return fmt.Errorf("create device error: %w", err)
 	}
@@ -176,13 +178,13 @@ func (d *DeviceDriver) initManagers(object interface{}) (model.DevScopeMask, err
 	defer d.mutex.Unlock()
 
 	// Setup Worker driver interface
-	if drv, ok := object.(device.DeviceWorker); ok {
-		d.worker = drv
+	if worker, ok := object.(device.DeviceWorker); ok {
+		d.worker = worker
 		supported |= model.ScopeFlagSystem
 	}
 	// Setup Device scope interface
-	if device, ok := object.(model.DeviceManager); ok {
-		d.device = device
+	if common, ok := object.(model.DeviceManager); ok {
+		d.device = common
 		supported |= model.ScopeFlagDevice
 	}
 	// Setup Printer scope interface

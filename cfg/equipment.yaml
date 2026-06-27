@@ -1,0 +1,10 @@
+
+logger:
+  level: "debug"
+  max_size: 10
+  max_backups: 3
+  max_age: 14
+  compress: false
+
+device:
+

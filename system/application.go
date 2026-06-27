@@ -50,7 +50,7 @@ func (app *Application) Run(ctx context.Context) error {
 	defer callbackCli.Close()
 
 	devDriver := NewDeviceDriver(app.log,
-		WithDeviceConfig(app.config.Device),
+		WithDeviceConfig(&app.config.Device),
 		WithDeviceCallback(callbackCli),
 		WithDeviceCreator(app.creator),
 	)

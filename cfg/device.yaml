@@ -1,0 +1,10 @@
+
+logger:
+  level: "info"
+  max_size: 1
+  max_backups: 5
+  max_age: 14
+  compress: false
+
+device:
+

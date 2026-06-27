@@ -25,8 +25,14 @@ type DeviceWorker interface {
 	DeviceTimer(ctx context.Context, unix int64) error
 }
 
+type CreatorParams struct {
+	Logger   *slog.Logger
+	Config   *config.DeviceConfig
+	Callback Callback
+}
+
 type DeviceCreator interface {
-	CreateDevice(log *slog.Logger, cfg *config.DeviceConfig, cb Callback) (any, error)
+	CreateDevice(params CreatorParams) (any, error)
 }
 
 type DummyEngine struct {
@@ -45,7 +51,7 @@ func NewDummyEngine(log *slog.Logger, cfg *config.DeviceConfig, cb Callback) *Du
 
 type DummyCreator struct{}
 
-func (dc *DummyCreator) CreateDevice(log *slog.Logger, cfg *config.DeviceConfig, cb Callback) (any, error) {
-	dummy := NewDummyEngine(log, cfg, cb)
+func (dc *DummyCreator) CreateDevice(params CreatorParams) (any, error) {
+	dummy := NewDummyEngine(params.Logger, params.Config, params.Callback)
 	return dummy, nil
 }

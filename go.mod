@@ -6,6 +6,7 @@ require (
 	github.com/iftsoft/linker v0.1.3
 	github.com/karalabe/hid v1.0.0
 	go.bug.st/serial v1.6.4
+	gopkg.in/natefinch/lumberjack.v2 v2.2.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
