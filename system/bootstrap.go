@@ -21,13 +21,20 @@ type AppParams struct {
 	CfgPath string
 }
 
-func RunBootstrap(cfg *config.AppConfig) (*slog.Logger, error) {
+type AppSetup struct {
+	Logger  *slog.Logger
+	Config  *config.AppConfig
+	DevName string
+}
+
+func RunBootstrap() (*AppSetup, error) {
 	// get application params
 	params := GetAppParams()
 	cfgFile := filepath.Join(params.CfgPath, params.DevName+".yaml")
 	logFile := filepath.Join(params.LogPath, params.DevName+".log")
 
 	// read application config
+	cfg := &config.AppConfig{}
 	err := ReadYamlFile(cfgFile, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read app config %s: %w", cfgFile, err)
@@ -35,7 +42,7 @@ func RunBootstrap(cfg *config.AppConfig) (*slog.Logger, error) {
 
 	// prepare logs folder
 	if params.LogPath != "" {
-		err := os.MkdirAll(params.LogPath, os.ModePerm)
+		err = os.MkdirAll(params.LogPath, os.ModePerm)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create log directory %s: %w", params.LogPath, err)
 		}
@@ -61,7 +68,12 @@ func RunBootstrap(cfg *config.AppConfig) (*slog.Logger, error) {
 	slog.SetDefault(logger)
 	logger.Info("Run application bootstrap", slog.Any("params", params), slog.Any("logger", cfg.Logger))
 
-	return logger, nil
+	setup := &AppSetup{
+		Logger:  logger,
+		Config:  cfg,
+		DevName: params.DevName,
+	}
+	return setup, nil
 }
 
 func GetAppParams() AppParams {

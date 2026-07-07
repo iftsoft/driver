@@ -14,29 +14,9 @@ import (
 	"github.com/iftsoft/driver/device"
 )
 
-//type DeviceCallback interface {
-//	//model.SystemCallback
-//	model.DeviceCallback
-//	model.PrinterCallback
-//	model.ReaderCallback
-//	model.ValidatorCallback
-//}
-//
-//type DeviceWorker interface {
-//	InitDevice(ctx context.Context) error
-//	StartDevice(ctx context.Context, query *model.SystemConfig) error
-//	StopDevice(ctx context.Context) error
-//	CheckDevice(ctx context.Context) (*model.SystemMetrics, error)
-//	DeviceTimer(ctx context.Context, unix int64) error
-//}
-//
-//type DeviceCreator interface {
-//	CreateDevice(log *slog.Logger, cfg *config.DeviceConfig, cb DeviceCallback) (any, error)
-//}
-
 type DeviceDriver struct {
 	log       *slog.Logger
-	config    *config.DeviceConfig
+	config    config.DeviceConfig
 	callback  device.Callback
 	creator   device.DeviceCreator
 	worker    device.DeviceWorker
@@ -49,40 +29,21 @@ type DeviceDriver struct {
 	devName   string
 }
 
-type DriverOption func(*DeviceDriver)
-
-func NewDeviceDriver(log *slog.Logger, opts ...DriverOption) *DeviceDriver {
-	dummy := NewDummyDevice(log)
+func NewDeviceDriver(setup *AppSetup, callback device.Callback, creator device.DeviceCreator) *DeviceDriver {
+	dummy := NewDummyDevice(setup.Logger)
 	drv := DeviceDriver{
-		log:       log,
+		log:       setup.Logger,
+		config:    setup.Config.Device,
+		devName:   setup.DevName,
+		callback:  callback,
+		creator:   creator,
 		device:    dummy,
 		printer:   dummy,
 		reader:    dummy,
 		validator: dummy,
 		worker:    dummy,
 	}
-	for _, opt := range opts {
-		opt(&drv)
-	}
 	return &drv
-}
-
-func WithDeviceCallback(cb device.Callback) DriverOption {
-	return func(d *DeviceDriver) {
-		d.callback = cb
-	}
-}
-
-func WithDeviceConfig(cfg *config.DeviceConfig) DriverOption {
-	return func(d *DeviceDriver) {
-		d.config = cfg
-	}
-}
-
-func WithDeviceCreator(creator device.DeviceCreator) DriverOption {
-	return func(d *DeviceDriver) {
-		d.creator = creator
-	}
 }
 
 func (d *DeviceDriver) DeviceManager() model.DeviceManager {
@@ -116,7 +77,7 @@ func (d *DeviceDriver) CreateDevice(ctx context.Context, query *model.SystemConf
 	d.clearManagers()
 
 	object, err := d.creator.CreateDevice(device.CreatorParams{
-		Logger: d.log, Config: d.config, Callback: d.callback,
+		DevName: d.devName, Logger: d.log, Config: &d.config, Callback: d.callback,
 	})
 	if err != nil {
 		return fmt.Errorf("create device error: %w", err)

@@ -26,6 +26,7 @@ type DeviceWorker interface {
 }
 
 type CreatorParams struct {
+	DevName  string
 	Logger   *slog.Logger
 	Config   *config.DeviceConfig
 	Callback Callback
@@ -33,25 +34,4 @@ type CreatorParams struct {
 
 type DeviceCreator interface {
 	CreateDevice(params CreatorParams) (any, error)
-}
-
-type DummyEngine struct {
-	BaseEngine
-}
-
-func NewDummyEngine(log *slog.Logger, cfg *config.DeviceConfig, cb Callback) *DummyEngine {
-	return &DummyEngine{
-		BaseEngine: BaseEngine{
-			Log:      log,
-			Config:   cfg,
-			Callback: cb,
-		},
-	}
-}
-
-type DummyCreator struct{}
-
-func (dc *DummyCreator) CreateDevice(params CreatorParams) (any, error) {
-	dummy := NewDummyEngine(params.Logger, params.Config, params.Callback)
-	return dummy, nil
 }

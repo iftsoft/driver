@@ -22,30 +22,15 @@ type SystemDriver struct {
 	error    model.SysError
 }
 
-type SystemOption func(*SystemDriver)
-
-func NewSystemDriver(log *slog.Logger, opts ...SystemOption) *SystemDriver {
+func NewSystemDriver(log *slog.Logger, callback model.SystemCallback, driver *DeviceDriver) *SystemDriver {
 	sd := SystemDriver{
-		log:   log,
-		state: model.SysStateUndefined,
-		error: model.SysErrSuccess,
-	}
-	for _, opt := range opts {
-		opt(&sd)
+		log:      log,
+		driver:   driver,
+		callback: callback,
+		state:    model.SysStateUndefined,
+		error:    model.SysErrSuccess,
 	}
 	return &sd
-}
-
-func WithSystemCallback(cb model.SystemCallback) SystemOption {
-	return func(sd *SystemDriver) {
-		sd.callback = cb
-	}
-}
-
-func WithDeviceDriver(driver *DeviceDriver) SystemOption {
-	return func(sd *SystemDriver) {
-		sd.driver = driver
-	}
 }
 
 // Implementation of model.SystemManager
