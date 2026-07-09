@@ -2,7 +2,7 @@ package config
 
 import "fmt"
 
-type EnumLinkType uint16
+type EnumLinkType uint32
 type EnumStopBits uint16
 type EnumParity uint16
 
@@ -91,8 +91,8 @@ func (cfg *SerialConfig) String() string {
 }
 
 type HidUsbConfig struct {
-	VendorID  uint16 `yaml:"vendor_id"`  // Device Vendor ID
-	ProductID uint16 `yaml:"product_id"` // Device Product ID
+	VendorID  uint32 `yaml:"vendor_id"`  // Device Vendor ID
+	ProductID uint32 `yaml:"product_id"` // Device Product ID
 	SerialNo  string `yaml:"serial_no"`  // Serial Number
 }
 
@@ -107,10 +107,10 @@ func (cfg *HidUsbConfig) String() string {
 }
 
 type LinkerConfig struct {
-	LinkType EnumLinkType  `yaml:"link_type"`
-	Timeout  uint16        `yaml:"timeout"`
-	Serial   *SerialConfig `yaml:"serial"`
-	HidUsb   *HidUsbConfig `yaml:"hid_usb"`
+	LinkType EnumLinkType `yaml:"link_type"`
+	Timeout  uint16       `yaml:"timeout"`
+	Serial   SerialConfig `yaml:"serial"`
+	HidUsb   HidUsbConfig `yaml:"hid_usb"`
 }
 
 func (cfg *LinkerConfig) String() string {
@@ -127,14 +127,14 @@ func GetDefaultLinkerConfig() *LinkerConfig {
 	lnkCfg := &LinkerConfig{
 		LinkType: LinkTypeNone,
 		Timeout:  0,
-		Serial: &SerialConfig{
+		Serial: SerialConfig{
 			PortName: "",
 			BaudRate: 9600,
 			DataBits: 8,
 			StopBits: OneStopBit,
 			Parity:   NoParity,
 		},
-		HidUsb: &HidUsbConfig{},
+		HidUsb: HidUsbConfig{},
 	}
 	return lnkCfg
 }

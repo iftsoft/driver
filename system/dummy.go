@@ -15,6 +15,10 @@ func NewDummyDevice(log *slog.Logger) *DummyDevice {
 	return &DummyDevice{log: log}
 }
 
+func (dum *DummyDevice) DeviceSettings() model.SystemSetup {
+	return model.SystemSetup{}
+}
+
 func (dum *DummyDevice) InitDevice(ctx context.Context) error {
 	return ErrNotImplemented
 }

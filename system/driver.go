@@ -24,6 +24,7 @@ type DeviceDriver struct {
 	printer   model.PrinterManager
 	reader    model.ReaderManager
 	validator model.ValidatorManager
+	settings  model.SystemSetup
 	mutex     sync.RWMutex
 	done      chan struct{}
 	devName   string
@@ -34,7 +35,7 @@ func NewDeviceDriver(setup *AppSetup, callback device.Callback, creator device.D
 	drv := DeviceDriver{
 		log:       setup.Logger,
 		config:    setup.Config.Device,
-		devName:   setup.DevName,
+		devName:   setup.Params.DevName,
 		callback:  callback,
 		creator:   creator,
 		device:    dummy,
@@ -82,7 +83,7 @@ func (d *DeviceDriver) CreateDevice(ctx context.Context, query *model.SystemConf
 	if err != nil {
 		return fmt.Errorf("create device error: %w", err)
 	}
-	_, err = d.initManagers(object)
+	err = d.initManagers(object)
 	if err != nil {
 		return fmt.Errorf("init managers error: %w", err)
 	}
@@ -132,43 +133,43 @@ func (d *DeviceDriver) clearManagers() {
 	d.worker = dummy
 }
 
-func (d *DeviceDriver) initManagers(object interface{}) (model.DevScopeMask, error) {
-	var supported model.DevScopeMask
-
+func (d *DeviceDriver) initManagers(object interface{}) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
+	d.settings = model.SystemSetup{}
 	// Setup Worker driver interface
 	if worker, ok := object.(device.DeviceWorker); ok {
 		d.worker = worker
-		supported |= model.ScopeFlagSystem
+		d.settings = d.worker.DeviceSettings()
+		d.settings.Supported = model.ScopeFlagSystem
 	}
 	// Setup Device scope interface
 	if common, ok := object.(model.DeviceManager); ok {
 		d.device = common
-		supported |= model.ScopeFlagDevice
+		d.settings.Supported |= model.ScopeFlagDevice
 	}
 	// Setup Printer scope interface
 	if printer, ok := object.(model.PrinterManager); ok {
 		d.printer = printer
-		supported |= model.ScopeFlagPrinter
+		d.settings.Supported |= model.ScopeFlagPrinter
 	}
 	// Setup Reader scope interface
 	if reader, ok := object.(model.ReaderManager); ok {
 		d.reader = reader
-		supported |= model.ScopeFlagReader
+		d.settings.Supported |= model.ScopeFlagReader
 	}
 	// Setup Validator scope interface
-	if valid, ok := object.(model.ValidatorManager); ok {
-		d.validator = valid
-		supported |= model.ScopeFlagValidator
+	if validator, ok := object.(model.ValidatorManager); ok {
+		d.validator = validator
+		d.settings.Supported |= model.ScopeFlagValidator
 	}
 
-	valid := model.ScopeFlagSystem | model.ScopeFlagDevice
-	if supported&valid == valid {
-		return supported, nil
+	validMask := model.ScopeFlagSystem | model.ScopeFlagDevice
+	if d.settings.Supported&validMask == validMask {
+		return nil
 	}
-	return supported, errors.New("device object is not valid")
+	return errors.New("device object is not valid")
 }
 
 func (d *DeviceDriver) startDeviceLoop(ctx context.Context) {

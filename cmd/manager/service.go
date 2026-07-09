@@ -20,12 +20,20 @@ func NewCallbackService(log *slog.Logger) *CallbackService {
 // GreetingInfo sends notification about device application
 func (cs *CallbackService) GreetingInfo(ctx context.Context, value *model.GreetingInfo) error {
 	cs.log.Info("CallbackService.GreetingInfo", slog.Any("value", value))
+	mngr := NewManager(cs.log, value)
+	go mngr.Process(context.Background())
 	return nil
 }
 
 // SystemReply sends notification about device reply
 func (cs *CallbackService) SystemReply(ctx context.Context, value *model.SystemReply) error {
 	cs.log.Info("CallbackService.SystemReply", slog.Any("value", value))
+	return nil
+}
+
+// SystemDevice sends notification about device settings
+func (cs *CallbackService) SystemDevice(ctx context.Context, value *model.SystemDevice) error {
+	cs.log.Info("CallbackService.SystemDevice", slog.Any("value", value))
 	return nil
 }
 

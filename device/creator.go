@@ -18,6 +18,7 @@ type Callback interface {
 }
 
 type DeviceWorker interface {
+	DeviceSettings() model.SystemSetup
 	InitDevice(ctx context.Context) error
 	StartDevice(ctx context.Context, query *model.SystemConfig) error
 	StopDevice(ctx context.Context) error

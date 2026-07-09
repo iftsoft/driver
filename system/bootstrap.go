@@ -22,9 +22,9 @@ type AppParams struct {
 }
 
 type AppSetup struct {
-	Logger  *slog.Logger
-	Config  *config.AppConfig
-	DevName string
+	Logger *slog.Logger
+	Config *config.AppConfig
+	Params AppParams
 }
 
 func RunBootstrap() (*AppSetup, error) {
@@ -69,9 +69,9 @@ func RunBootstrap() (*AppSetup, error) {
 	logger.Info("Run application bootstrap", slog.Any("params", params), slog.Any("logger", cfg.Logger))
 
 	setup := &AppSetup{
-		Logger:  logger,
-		Config:  cfg,
-		DevName: params.DevName,
+		Logger: logger,
+		Config: cfg,
+		Params: params,
 	}
 	return setup, nil
 }

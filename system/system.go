@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"time"
 
 	"github.com/iftsoft/linker/model"
 
@@ -63,10 +62,12 @@ func (sd *SystemDriver) Terminate(ctx context.Context, query *model.SystemQuery)
 	return reply, nil
 }
 
-func (sd *SystemDriver) SysInform(ctx context.Context, query *model.SystemQuery) (*model.SystemHealth, error) {
+func (sd *SystemDriver) SysHealth(ctx context.Context, query *model.SystemQuery) (*model.SystemHealth, error) {
 	reply := &model.SystemHealth{
-		Device: query.Device,
-		Moment: time.Now().Unix(),
+		SystemReply: model.SystemReply{
+			Device:  query.Device,
+			Command: model.CmdSystemHealth,
+		},
 	}
 
 	if sd.driver == nil {
@@ -80,20 +81,22 @@ func (sd *SystemDriver) SysInform(ctx context.Context, query *model.SystemQuery)
 	reply.SysState = sd.state
 	reply.SysError = sd.error
 	if metrics != nil {
-		reply.Metrics = *metrics
+		reply.SystemMetrics = *metrics
 	}
 	if sd.callback != nil {
 		err = sd.callback.SystemHealth(ctx, reply)
 	}
 
-	sd.log.Info("SystemDriver.SysInform", "query", *query, "reply", *reply)
+	sd.log.Info("SystemDriver.SysHealth", "query", *query, "reply", *reply)
 	return reply, nil
 }
 
-func (sd *SystemDriver) SysStart(ctx context.Context, query *model.SystemConfig) (*model.SystemReply, error) {
-	reply := &model.SystemReply{
-		Device:  query.Device,
-		Command: model.CmdSystemStart,
+func (sd *SystemDriver) SysStart(ctx context.Context, query *model.SystemConfig) (*model.SystemDevice, error) {
+	reply := &model.SystemDevice{
+		SystemReply: model.SystemReply{
+			Device:  query.Device,
+			Command: model.CmdSystemStart,
+		},
 	}
 
 	if sd.driver == nil {
@@ -103,6 +106,7 @@ func (sd *SystemDriver) SysStart(ctx context.Context, query *model.SystemConfig)
 	err := sd.driver.CreateDevice(ctx, query)
 	if err == nil {
 		sd.state = model.SysStateRunning
+		reply.SystemSetup = sd.driver.settings
 	} else {
 		sd.state = model.SysStateFailed
 		sd.error = model.SysErrSystemFail
@@ -111,7 +115,7 @@ func (sd *SystemDriver) SysStart(ctx context.Context, query *model.SystemConfig)
 	reply.SysState = sd.state
 	reply.SysError = sd.error
 	if sd.callback != nil {
-		err = sd.callback.SystemReply(ctx, reply)
+		err = sd.callback.SystemDevice(ctx, reply)
 	}
 
 	sd.log.Info("SystemDriver.SysStart", "query", *query, "reply", *reply)
@@ -146,11 +150,13 @@ func (sd *SystemDriver) SysStop(ctx context.Context, query *model.SystemQuery) (
 	return reply, nil
 }
 
-func (sd *SystemDriver) SysRestart(ctx context.Context, query *model.SystemConfig) (*model.SystemReply, error) {
+func (sd *SystemDriver) SysRestart(ctx context.Context, query *model.SystemConfig) (*model.SystemDevice, error) {
 	sd.state = model.SysStateUndefined
-	reply := &model.SystemReply{
-		Device:  query.Device,
-		Command: model.CmdSystemRestart,
+	reply := &model.SystemDevice{
+		SystemReply: model.SystemReply{
+			Device:  query.Device,
+			Command: model.CmdSystemRestart,
+		},
 	}
 
 	if sd.driver == nil {
@@ -164,6 +170,7 @@ func (sd *SystemDriver) SysRestart(ctx context.Context, query *model.SystemConfi
 	err = sd.driver.CreateDevice(ctx, query)
 	if err == nil {
 		sd.state = model.SysStateRunning
+		reply.SystemSetup = sd.driver.settings
 	} else {
 		sd.state = model.SysStateFailed
 		reply.Message = err.Error()
@@ -171,7 +178,7 @@ func (sd *SystemDriver) SysRestart(ctx context.Context, query *model.SystemConfi
 	reply.SysState = sd.state
 	reply.SysError = sd.error
 	if sd.callback != nil {
-		err = sd.callback.SystemReply(ctx, reply)
+		err = sd.callback.SystemDevice(ctx, reply)
 	}
 
 	sd.log.Info("SystemDriver.SysRestart", "query", *query, "reply", *reply)

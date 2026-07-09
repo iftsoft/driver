@@ -3,7 +3,7 @@ module github.com/iftsoft/driver
 go 1.24.4
 
 require (
-	github.com/iftsoft/linker v0.1.3
+	github.com/iftsoft/linker v0.1.5
 	github.com/karalabe/hid v1.0.0
 	go.bug.st/serial v1.6.4
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1

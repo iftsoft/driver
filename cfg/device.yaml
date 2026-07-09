@@ -1,6 +1,6 @@
 
 logger:
-  level: "info"
+  level: "debug"
   max_size: 1
   max_backups: 5
   max_age: 14

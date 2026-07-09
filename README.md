@@ -15,5 +15,6 @@ Run manager application
 
 Run equipment application
 ```shell
-./equipment
+./equipment -dev_name device -log_path ./log -cfg_path ./cfg
+
 ```
