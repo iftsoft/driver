@@ -1,11 +1,13 @@
-package linker
+package hardware
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 
-	"github.com/iftsoft/driver/config"
 	"go.bug.st/serial"
+
+	"github.com/iftsoft/driver/config"
 )
 
 type SerialLink struct {
@@ -27,18 +29,19 @@ func NewSerialLink(log *slog.Logger, cfg *config.SerialConfig, call PortReader) 
 	return &s
 }
 
-func EnumerateSerialPorts(out *core.LogAgent) (list []string, err error) {
-	defer core.PanicRecover(&err, out)
-	out.Debug("Serial port enumeration")
+func EnumerateSerialPorts(log *slog.Logger) (list []string, err error) {
+	//defer core.PanicRecover(&err, log)
+	log.Debug("Serial port enumeration")
 	list, err = serial.GetPortsList()
 	for i, ser := range list {
-		out.Debug("   Port#%d - %s", i, ser)
+		line := fmt.Sprintf("   Port#%d - %s", i, ser)
+		log.Debug(line)
 	}
 	return list, err
 }
 
 func (s *SerialLink) Open() (err error) {
-	defer core.PanicRecover(&err, s.log)
+	//defer core.PanicRecover(&err, s.log)
 	if s.config == nil {
 		return errors.New("serial config is not set")
 	}
@@ -57,17 +60,17 @@ func (s *SerialLink) Open() (err error) {
 	} else {
 		s.port = nil
 	}
-	s.log.Trace("Open serial port %s return %s", s.config.PortName, core.GetErrorText(err))
+	//s.log.Debug("Open serial port", s.config.PortName, core.GetErrorText(err))
 	return err
 }
 
 func (s *SerialLink) Close() (err error) {
-	defer core.PanicRecover(&err, s.log)
+	//defer core.PanicRecover(&err, s.log)
 	if s.port == nil {
 		return err
 	}
 	err = s.port.Close()
-	s.log.Trace("Close serial port %s return %s", s.config.PortName, core.GetErrorText(err))
+	//s.log.Debug("Close serial port %s return %s", s.config.PortName, core.GetErrorText(err))
 	if err == nil {
 		s.port = nil
 	}
@@ -75,7 +78,7 @@ func (s *SerialLink) Close() (err error) {
 }
 
 func (s *SerialLink) Flash() (err error) {
-	defer core.PanicRecover(&err, s.log)
+	//defer core.PanicRecover(&err, s.log)
 	if s.port == nil {
 		err = errPortNotOpen
 	}
@@ -85,7 +88,7 @@ func (s *SerialLink) Flash() (err error) {
 	if err == nil {
 		err = s.port.ResetOutputBuffer()
 	}
-	s.log.Trace("Flash serial port %s return %s", s.config.PortName, core.GetErrorText(err))
+	//s.log.Debug("Flash serial port %s return %s", s.config.PortName, core.GetErrorText(err))
 	return err
 }
 
@@ -94,33 +97,33 @@ func (s *SerialLink) IsOpen() bool {
 }
 
 func (s *SerialLink) Write(data []byte) (n int, err error) {
-	defer core.PanicRecover(&err, s.log)
+	//defer core.PanicRecover(&err, s.log)
 	if s.port == nil {
 		return 0, errPortNotOpen
 	}
-	s.log.Dump("Serial write data : %s", core.GetBinaryDump(data))
+	//s.log.Debug("Serial write data : %s", core.GetBinaryDump(data))
 	n, err = s.port.Write(data)
-	s.log.Trace("Write to serial port %s return %s", s.config.PortName, core.GetErrorText(err))
+	//s.log.Debug("Write to serial port %s return %s", s.config.PortName, core.GetErrorText(err))
 	return n, err
 }
 
 func (s *SerialLink) readData(data []byte) (n int, err error) {
-	defer core.PanicRecover(&err, s.log)
+	//defer core.PanicRecover(&err, s.log)
 	if s.port == nil {
 		return 0, errPortNotOpen
 	}
 	n, err = s.port.Read(data)
-	s.log.Dump("Serial read data : %s", core.GetBinaryDump(data[0:n]))
-	s.log.Trace("Read from serial port %s of %d bytes return %s",
-		s.config.PortName, n, core.GetErrorText(err))
+	//s.log.Debug("Serial read data : %s", core.GetBinaryDump(data[0:n]))
+	//s.log.Debug("Read from serial port %s of %d bytes return %s",
+	//	s.config.PortName, n, core.GetErrorText(err))
 	return n, err
 }
 
 func (s *SerialLink) readingLoop() {
 	s.isOpen = true
 	defer func() { s.isOpen = false }()
-	s.log.Trace("Serial reading loop is started")
-	defer s.log.Trace("Serial reading loop is stopped")
+	s.log.Debug("Serial reading loop is started")
+	defer s.log.Debug("Serial reading loop is stopped")
 
 	rest := []byte{}
 	for {
@@ -132,14 +135,14 @@ func (s *SerialLink) readingLoop() {
 			rest = s.processData(data)
 		}
 		if err != nil {
-			s.log.Warn("Serial ReadData error: %s", err)
+			s.log.Warn("Serial ReadData failed", slog.String("error", err.Error()))
 			return
 		}
 	}
 }
 
 func (s *SerialLink) processData(data []byte) (out []byte) {
-	s.log.Dump("Process reply data : %s", core.GetBinaryDump(data))
+	//s.log.Debug("Process reply data : %s", core.GetBinaryDump(data))
 	if s.reader == nil {
 		return nil
 	}

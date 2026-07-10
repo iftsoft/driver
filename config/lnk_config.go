@@ -113,15 +113,15 @@ type LinkerConfig struct {
 	HidUsb   HidUsbConfig `yaml:"hid_usb"`
 }
 
-func (cfg *LinkerConfig) String() string {
-	if cfg == nil {
-		return ""
-	}
-	str := fmt.Sprintf("\n\tLinker config: "+
-		"LinkType = %s, Timeout = %d, %s %s",
-		cfg.LinkType, cfg.Timeout, cfg.Serial, cfg.HidUsb)
-	return str
-}
+//func (cfg *LinkerConfig) String() string {
+//	if cfg == nil {
+//		return ""
+//	}
+//	str := fmt.Sprintf("\n\tLinker config: "+
+//		"LinkType = %s, Timeout = %d, %s %s",
+//		cfg.LinkType, cfg.Timeout, cfg.Serial, cfg.HidUsb)
+//	return str
+//}
 
 func GetDefaultLinkerConfig() *LinkerConfig {
 	lnkCfg := &LinkerConfig{

@@ -1,5 +1,6 @@
 package utils
 
+/*
 import (
 	"fmt"
 	"net"
@@ -10,7 +11,7 @@ func isPortFree(port int) bool {
 	if err != nil {
 		return false
 	}
-	ln.Close()
+	_ = ln.Close()
 	return true
 }
 
@@ -30,3 +31,4 @@ func getFreePort() (int, error) {
 	// Get the port number assigned by the OS
 	return l.Addr().(*net.TCPAddr).Port, nil
 }
+*/

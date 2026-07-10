@@ -1,4 +1,4 @@
-package linker
+package hardware
 
 import (
 	"log/slog"
@@ -41,13 +41,13 @@ func (d *DummyLink) IsOpen() bool {
 }
 
 func (d *DummyLink) Write(data []byte) (int, error) {
-	if d.isOpen == false {
+	if !d.isOpen {
 		return 0, errPortNotOpen
 	}
-	d.log.Debug("DummyLink write data : %v", data)
+	d.log.Debug("DummyLink write data", slog.Any("data", data))
 	go func(dump []byte) {
 		if d.reader != nil {
-			d.log.Debug("DummyLink read data : %v", dump)
+			d.log.Debug("DummyLink read data", slog.Any("dump", dump))
 			d.reader.OnRead(dump)
 		}
 	}(data)

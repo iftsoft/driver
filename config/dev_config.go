@@ -162,16 +162,6 @@ type DeviceConfig struct {
 	Vendor    *VendorConfig    `yaml:"vendor"`
 }
 
-func (cfg *DeviceConfig) String() string {
-	if cfg == nil {
-		return ""
-	}
-	str := fmt.Sprintf("\nDevice config: %s %s %s %s %s %s %s %s",
-		cfg.Linker, cfg.Common, cfg.Printer, cfg.Reader,
-		cfg.Pinpad, cfg.Validator, cfg.Dispenser, cfg.Vendor)
-	return str
-}
-
 func GetDefaultDeviceConfig() *DeviceConfig {
 	devCfg := &DeviceConfig{
 		Linker:    GetDefaultLinkerConfig(),
@@ -191,14 +181,4 @@ type ConfigOverwrite struct {
 	PortName  string       `yaml:"port_name"`
 	VendorID  uint16       `yaml:"vendor_id"`  // Device Vendor ID
 	ProductID uint16       `yaml:"product_id"` // Device Product ID
-}
-
-func (cfg *ConfigOverwrite) String() string {
-	if cfg == nil {
-		return ""
-	}
-	str := fmt.Sprintf("\n\t\tLinker overwrite: "+
-		"LinkType = %s, PortName = %s, VendorID = %X, ProductID = %X.",
-		cfg.LinkType, cfg.PortName, cfg.VendorID, cfg.ProductID)
-	return str
 }

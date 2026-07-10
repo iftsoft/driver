@@ -24,7 +24,7 @@ type DeviceDriver struct {
 	printer   model.PrinterManager
 	reader    model.ReaderManager
 	validator model.ValidatorManager
-	settings  model.SystemSetup
+	settings  model.DeviceSetup
 	mutex     sync.RWMutex
 	done      chan struct{}
 	devName   string
@@ -71,7 +71,7 @@ func (d *DeviceDriver) ValidatorManager() model.ValidatorManager {
 	return d.validator
 }
 
-func (d *DeviceDriver) CreateDevice(ctx context.Context, query *model.SystemConfig) error {
+func (d *DeviceDriver) CreateDevice(ctx context.Context, query *model.ConfigUpdate) error {
 	if d.creator == nil {
 		return errors.New("driver does not have a creator")
 	}
@@ -112,7 +112,7 @@ func (d *DeviceDriver) DeleteDevice(ctx context.Context) error {
 	return nil
 }
 
-func (d *DeviceDriver) CheckDevice(ctx context.Context) (*model.SystemMetrics, error) {
+func (d *DeviceDriver) CheckDevice(ctx context.Context) (*model.DeviceMetrics, error) {
 	metrics, err := d.worker.CheckDevice(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("check device error: %w", err)
@@ -137,7 +137,7 @@ func (d *DeviceDriver) initManagers(object interface{}) error {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
 
-	d.settings = model.SystemSetup{}
+	d.settings = model.DeviceSetup{}
 	// Setup Worker driver interface
 	if worker, ok := object.(device.DeviceWorker); ok {
 		d.worker = worker

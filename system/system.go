@@ -3,11 +3,12 @@ package system
 import (
 	"context"
 	"errors"
+	"log"
 	"log/slog"
+	"os"
+	"time"
 
 	"github.com/iftsoft/linker/model"
-
-	"github.com/iftsoft/driver/utils"
 )
 
 var ErrNotImplemented = errors.New("method is not implemented")
@@ -30,6 +31,23 @@ func NewSystemDriver(log *slog.Logger, callback model.SystemCallback, driver *De
 		error:    model.SysErrSuccess,
 	}
 	return &sd
+}
+
+func SendQuitSignal(wait int) {
+	time.Sleep(time.Millisecond * time.Duration(wait))
+
+	p, err := os.FindProcess(os.Getpid())
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// On a Unix-like system, pressing Ctrl+C on a keyboard sends a
+	// SIGINT signal to the process of the program in execution.
+	//
+	// This example simulates that by sending a SIGINT signal to itself.
+	if err = p.Signal(os.Interrupt); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // Implementation of model.SystemManager
@@ -55,8 +73,11 @@ func (sd *SystemDriver) Terminate(ctx context.Context, query *model.SystemQuery)
 	reply.SysError = sd.error
 	if sd.callback != nil {
 		err = sd.callback.SystemReply(ctx, reply)
+		if err != nil {
+			sd.log.Warn("Callback SystemReply failed", slog.String("error", err.Error()))
+		}
 	}
-	go utils.SendQuitSignal(100)
+	go SendQuitSignal(100)
 
 	sd.log.Info("SystemDriver.Terminate", "query", *query, "reply", *reply)
 	return reply, nil
@@ -81,17 +102,20 @@ func (sd *SystemDriver) SysHealth(ctx context.Context, query *model.SystemQuery)
 	reply.SysState = sd.state
 	reply.SysError = sd.error
 	if metrics != nil {
-		reply.SystemMetrics = *metrics
+		reply.DeviceMetrics = *metrics
 	}
 	if sd.callback != nil {
 		err = sd.callback.SystemHealth(ctx, reply)
+		if err != nil {
+			sd.log.Warn("Callback SystemHealth failed", slog.String("error", err.Error()))
+		}
 	}
 
 	sd.log.Info("SystemDriver.SysHealth", "query", *query, "reply", *reply)
 	return reply, nil
 }
 
-func (sd *SystemDriver) SysStart(ctx context.Context, query *model.SystemConfig) (*model.SystemDevice, error) {
+func (sd *SystemDriver) SysStart(ctx context.Context, query *model.ConfigUpdate) (*model.SystemDevice, error) {
 	reply := &model.SystemDevice{
 		SystemReply: model.SystemReply{
 			Device:  query.Device,
@@ -106,7 +130,7 @@ func (sd *SystemDriver) SysStart(ctx context.Context, query *model.SystemConfig)
 	err := sd.driver.CreateDevice(ctx, query)
 	if err == nil {
 		sd.state = model.SysStateRunning
-		reply.SystemSetup = sd.driver.settings
+		reply.DeviceSetup = sd.driver.settings
 	} else {
 		sd.state = model.SysStateFailed
 		sd.error = model.SysErrSystemFail
@@ -116,6 +140,9 @@ func (sd *SystemDriver) SysStart(ctx context.Context, query *model.SystemConfig)
 	reply.SysError = sd.error
 	if sd.callback != nil {
 		err = sd.callback.SystemDevice(ctx, reply)
+		if err != nil {
+			sd.log.Warn("Callback SystemDevice failed", slog.String("error", err.Error()))
+		}
 	}
 
 	sd.log.Info("SystemDriver.SysStart", "query", *query, "reply", *reply)
@@ -144,13 +171,16 @@ func (sd *SystemDriver) SysStop(ctx context.Context, query *model.SystemQuery) (
 	reply.SysError = sd.error
 	if sd.callback != nil {
 		err = sd.callback.SystemReply(ctx, reply)
+		if err != nil {
+			sd.log.Warn("Callback SystemReply failed", slog.String("error", err.Error()))
+		}
 	}
 
 	sd.log.Info("SystemDriver.SysStop", "query", *query, "reply", *reply)
 	return reply, nil
 }
 
-func (sd *SystemDriver) SysRestart(ctx context.Context, query *model.SystemConfig) (*model.SystemDevice, error) {
+func (sd *SystemDriver) SysRestart(ctx context.Context, query *model.ConfigUpdate) (*model.SystemDevice, error) {
 	sd.state = model.SysStateUndefined
 	reply := &model.SystemDevice{
 		SystemReply: model.SystemReply{
@@ -170,7 +200,7 @@ func (sd *SystemDriver) SysRestart(ctx context.Context, query *model.SystemConfi
 	err = sd.driver.CreateDevice(ctx, query)
 	if err == nil {
 		sd.state = model.SysStateRunning
-		reply.SystemSetup = sd.driver.settings
+		reply.DeviceSetup = sd.driver.settings
 	} else {
 		sd.state = model.SysStateFailed
 		reply.Message = err.Error()
@@ -179,6 +209,9 @@ func (sd *SystemDriver) SysRestart(ctx context.Context, query *model.SystemConfi
 	reply.SysError = sd.error
 	if sd.callback != nil {
 		err = sd.callback.SystemDevice(ctx, reply)
+		if err != nil {
+			sd.log.Warn("Callback SystemDevice failed", slog.String("error", err.Error()))
+		}
 	}
 
 	sd.log.Info("SystemDriver.SysRestart", "query", *query, "reply", *reply)

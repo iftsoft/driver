@@ -1,11 +1,13 @@
-package linker
+package hardware
 
 import (
 	"errors"
+	"fmt"
 	"log/slog"
 
-	"github.com/iftsoft/driver/config"
 	"github.com/karalabe/hid"
+
+	"github.com/iftsoft/driver/config"
 )
 
 type HidUsbLink struct {
@@ -35,11 +37,12 @@ func EnumerateHidUsbPorts(log *slog.Logger) (list []*config.HidUsbConfig, err er
 		return nil, errors.New("hidapi library is not working")
 	}
 	for i, unit := range units {
-		log.Debug("   Port#%d - %d:%d/%s (%s - %s, %s)", i,
+		line := fmt.Sprintf("   Port#%d - %d:%d/%s (%s - %s, %s)", i,
 			unit.VendorID, unit.ProductID, unit.Serial, unit.Manufacturer, unit.Product, unit.Path)
+		log.Debug(line)
 		item := &config.HidUsbConfig{
-			VendorID:  unit.VendorID,
-			ProductID: unit.ProductID,
+			VendorID:  uint32(unit.VendorID),
+			ProductID: uint32(unit.ProductID),
 			SerialNo:  unit.Serial,
 		}
 		list = append(list, item)
@@ -53,8 +56,8 @@ func (h *HidUsbLink) Open() (err error) {
 		return errors.New("HidUsb config is not set")
 	}
 	info := hid.DeviceInfo{
-		VendorID:  h.config.VendorID,
-		ProductID: h.config.ProductID,
+		VendorID:  uint16(h.config.VendorID),
+		ProductID: uint16(h.config.ProductID),
 		Serial:    h.config.SerialNo,
 	}
 	h.link, err = info.Open()
@@ -93,8 +96,8 @@ func (h *HidUsbLink) Write(data []byte) (n int, err error) {
 		return 0, errPortNotOpen
 	}
 	n, err = h.link.Write(data)
-	h.log.Debug("Write to hidapi port %d:%d return %s",
-		h.config.VendorID, h.config.ProductID, "core.GetErrorText(err)")
+	line := fmt.Sprintf("Write to hidapi port %d:%d return %v", h.config.VendorID, h.config.ProductID, err)
+	h.log.Debug(line)
 	return n, err
 }
 
@@ -104,8 +107,9 @@ func (h *HidUsbLink) readData(data []byte) (n int, err error) {
 		return 0, errPortNotOpen
 	}
 	n, err = h.link.Read(data)
-	h.log.Debug("Read from hidapi port %d:%d return %s",
-		h.config.VendorID, h.config.ProductID, "core.GetErrorText(err)")
+	line := fmt.Sprintf("Read from hidapi port %d:%d return %v",
+		h.config.VendorID, h.config.ProductID, err)
+	h.log.Debug(line)
 	return n, err
 }
 
@@ -125,7 +129,7 @@ func (h *HidUsbLink) readingLoop() {
 			rest = h.processData(data)
 		}
 		if err != nil {
-			h.log.Warn("HidUsb ReadData error: %s", err)
+			h.log.Warn("HidUsb ReadData error", slog.String("error", err.Error()))
 			return
 		}
 	}

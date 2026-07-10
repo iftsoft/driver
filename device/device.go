@@ -31,10 +31,8 @@ func (be *BaseEngine) ClearDevice() {
 	be.DevReply = ""
 }
 
-func (be *BaseEngine) RunDeviceReply(ctx context.Context, cmd string) error {
-	// StateChanged processing
-	var err error
-	reply := &model.DeviceReply{
+func (be *BaseEngine) GetDeviceReply(cmd string) model.DeviceReply {
+	return model.DeviceReply{
 		Command: cmd,
 		Device:  be.DevName,
 		Action:  be.DevAction,
@@ -42,33 +40,40 @@ func (be *BaseEngine) RunDeviceReply(ctx context.Context, cmd string) error {
 		ErrCode: be.DevError,
 		ErrText: be.DevReply,
 	}
+}
+
+func (be *BaseEngine) GetDeviceNotify() model.DeviceNotify {
+	return model.DeviceNotify{
+		Device: be.DevName,
+		Action: be.DevAction,
+	}
+}
+
+func (be *BaseEngine) RunDeviceReply(ctx context.Context, cmd string) error {
+	// StateChanged processing
+	var err error
+	reply := be.GetDeviceReply(cmd)
 	if be.Callback != nil {
-		err = be.Callback.DeviceReply(ctx, reply)
+		err = be.Callback.DeviceReply(ctx, &reply)
 	}
 	if be.Log != nil {
-		be.Log.Debug("Callback DeviceReply: %s", reply.String())
+		be.Log.Debug("Callback DeviceReply", slog.Any("reply", reply))
 	}
 	return err
 }
 
-func (be *BaseEngine) RunExecuteError(ctx context.Context, errCode model.DevError, reason string) error {
+func (be *BaseEngine) RunExecuteError(ctx context.Context, cmd string, errCode model.DevError, reason string) error {
 	be.DevError = errCode
 	be.DevReply = model.NewError(errCode, reason).Error()
 	// ExecuteError processing
 	var err error
 	if be.DevError != model.DevErrorSuccess {
-		query := &model.DeviceReply{
-			Device:  be.DevName,
-			Action:  be.DevAction,
-			State:   be.DevState,
-			ErrCode: be.DevError,
-			ErrText: be.DevReply,
-		}
+		query := be.GetDeviceReply(cmd)
 		if be.Callback != nil {
-			err = be.Callback.ExecuteError(ctx, query)
+			err = be.Callback.ExecuteError(ctx, &query)
 		}
 		if be.Log != nil {
-			be.Log.Debug("Callback ExecuteError: %s", query.String())
+			be.Log.Debug("Callback ExecuteError", slog.Any("query", query))
 		}
 	}
 	return err
@@ -78,14 +83,15 @@ func (be *BaseEngine) RunStateChanged(ctx context.Context, state model.DevState)
 	// StateChanged processing
 	var err error
 	if be.DevState != state {
-		query := &model.DeviceState{
-			Device:   be.DevName,
-			Action:   be.DevAction,
-			OldState: be.DevState,
-			NewState: state,
+		query := model.DeviceState{
+			DeviceNotify: be.GetDeviceNotify(),
+			StateNotify: model.StateNotify{
+				OldState: be.DevState,
+				NewState: state,
+			},
 		}
 		if be.Callback != nil {
-			err = be.Callback.StateChanged(ctx, query)
+			err = be.Callback.StateChanged(ctx, &query)
 		}
 		if be.Log != nil {
 			be.Log.Debug("Callback StateChanged", slog.Any("query", query))
@@ -101,9 +107,10 @@ func (be *BaseEngine) RunActionPrompt(ctx context.Context, prompt model.DevPromp
 	var err error
 	if be.DevPrompt != model.DevPromptNone {
 		query := &model.DevicePrompt{
-			Device: be.DevName,
-			Action: be.DevAction,
-			Prompt: be.DevPrompt,
+			DeviceNotify: be.GetDeviceNotify(),
+			PromptNotify: model.PromptNotify{
+				Prompt: be.DevPrompt,
+			},
 		}
 		if be.Callback != nil {
 			err = be.Callback.ActionPrompt(ctx, query)
@@ -121,9 +128,10 @@ func (be *BaseEngine) RunReaderReturn(ctx context.Context, inform string) error 
 	var err error
 	if be.DevInform != "" {
 		query := &model.DeviceInform{
-			Device: be.DevName,
-			Action: be.DevAction,
-			Inform: be.DevInform,
+			DeviceNotify: be.GetDeviceNotify(),
+			InformNotify: model.InformNotify{
+				Inform: be.DevInform,
+			},
 		}
 		if be.Callback != nil {
 			err = be.Callback.ReaderReturn(ctx, query)

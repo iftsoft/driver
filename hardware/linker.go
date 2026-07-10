@@ -1,4 +1,4 @@
-package linker
+package hardware
 
 import (
 	"errors"
@@ -37,9 +37,9 @@ func GetPortLinker(log *slog.Logger, cfg *config.LinkerConfig, call PortReader) 
 	case config.LinkTypeNone:
 		return dummy
 	case config.LinkTypeSerial:
-		return NewSerialLink(log, cfg.Serial, call)
+		return NewSerialLink(log, &cfg.Serial, call)
 	case config.LinkTypeHidUsb:
-		return NewDummyLinker(log, cfg.HidUsb, call)
+		return NewDummyLinker(log, &cfg.HidUsb, call)
 	}
 	return dummy
 }
@@ -47,11 +47,11 @@ func GetPortLinker(log *slog.Logger, cfg *config.LinkerConfig, call PortReader) 
 func GetLinkerPorts(log *slog.Logger) error {
 	_, err := EnumerateSerialPorts(log)
 	if err != nil {
-		log.Error("Serial port error: %s", err.Error())
+		log.Error("Serial port error", slog.String("error", err.Error()))
 	}
 	_, err = EnumerateHidUsbPorts(log)
 	if err != nil {
-		log.Error("HidUsb port error: %s", err.Error())
+		log.Error("HidUsb port error", slog.String("error", err.Error()))
 	}
 	return err
 }

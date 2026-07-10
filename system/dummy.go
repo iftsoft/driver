@@ -15,15 +15,15 @@ func NewDummyDevice(log *slog.Logger) *DummyDevice {
 	return &DummyDevice{log: log}
 }
 
-func (dum *DummyDevice) DeviceSettings() model.SystemSetup {
-	return model.SystemSetup{}
+func (dum *DummyDevice) DeviceSettings() model.DeviceSetup {
+	return model.DeviceSetup{}
 }
 
 func (dum *DummyDevice) InitDevice(ctx context.Context) error {
 	return ErrNotImplemented
 }
 
-func (dum *DummyDevice) StartDevice(ctx context.Context, query *model.SystemConfig) error {
+func (dum *DummyDevice) StartDevice(ctx context.Context, query *model.ConfigUpdate) error {
 	return ErrNotImplemented
 }
 
@@ -31,7 +31,7 @@ func (dum *DummyDevice) StopDevice(ctx context.Context) error {
 	return ErrNotImplemented
 }
 
-func (dum *DummyDevice) CheckDevice(ctx context.Context) (*model.SystemMetrics, error) {
+func (dum *DummyDevice) CheckDevice(ctx context.Context) (*model.DeviceMetrics, error) {
 	return nil, ErrNotImplemented
 }
 

@@ -43,7 +43,7 @@ func (cs *Manager) Process(ctx context.Context) {
 }
 
 func (cs *Manager) RunDeviceFlow(ctx context.Context) error {
-	sysCfg := &model.SystemConfig{
+	sysCfg := &model.ConfigUpdate{
 		Device: cs.name,
 	}
 	out, err := cs.cli.SysStart(ctx, sysCfg)

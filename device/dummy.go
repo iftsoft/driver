@@ -2,6 +2,7 @@ package device
 
 import (
 	"context"
+	"log/slog"
 
 	"github.com/iftsoft/linker/model"
 
@@ -30,8 +31,8 @@ func NewDummyEngine(params CreatorParams) *DummyEngine {
 	}
 }
 
-func (dm *DummyEngine) DeviceSettings() model.SystemSetup {
-	return model.SystemSetup{
+func (dm *DummyEngine) DeviceSettings() model.DeviceSetup {
+	return model.DeviceSetup{
 		DevType:     model.DevTypeCustom,
 		Supported:   model.ScopeFlagSystem | model.ScopeFlagDevice,
 		Required:    model.ScopeFlagSystem | model.ScopeFlagDevice,
@@ -44,7 +45,7 @@ func (dm *DummyEngine) InitDevice(ctx context.Context) error {
 	return nil
 }
 
-func (dm *DummyEngine) StartDevice(ctx context.Context, query *model.SystemConfig) error {
+func (dm *DummyEngine) StartDevice(ctx context.Context, query *model.ConfigUpdate) error {
 	if dm.Config.Linker == nil {
 		dm.Config.Linker = &config.LinkerConfig{}
 	}
@@ -53,6 +54,7 @@ func (dm *DummyEngine) StartDevice(ctx context.Context, query *model.SystemConfi
 	cfg.Serial.PortName = query.PortName
 	cfg.HidUsb.VendorID = query.VendorID
 	cfg.HidUsb.ProductID = query.ProductID
+	cfg.HidUsb.SerialNo = query.SerialNo
 	dm.Log.Info("Dummy: device start")
 	return nil
 }
@@ -62,8 +64,8 @@ func (dm *DummyEngine) StopDevice(ctx context.Context) error {
 	return nil
 }
 
-func (dm *DummyEngine) CheckDevice(ctx context.Context) (*model.SystemMetrics, error) {
-	out := &model.SystemMetrics{}
+func (dm *DummyEngine) CheckDevice(ctx context.Context) (*model.DeviceMetrics, error) {
+	out := &model.DeviceMetrics{}
 	dm.Log.Info("Dummy: device check")
 	return out, nil
 }
@@ -75,52 +77,32 @@ func (dm *DummyEngine) DeviceTimer(ctx context.Context, unix int64) error {
 
 // Cancel interrupts current operation on device
 func (dm *DummyEngine) Cancel(ctx context.Context, query *model.DeviceQuery) (*model.DeviceReply, error) {
-	dm.Log.Warn("DummyDevice.Cancel", "query", *query)
-	reply := &model.DeviceReply{
-		Device:  query.Device,
-		Command: model.CmdDeviceCancel,
-		State:   dm.DevState,
-		ErrCode: dm.DevError,
-		ErrText: dm.DevError.String(),
-	}
-	return reply, nil
+	// TODO: Add some useful action here
+	reply := dm.GetDeviceReply(model.CmdDeviceCancel)
+	dm.Log.Warn("DummyDevice.Cancel", slog.Any("query", *query), slog.Any("reply", reply))
+	return &reply, nil
 }
 
 // Reset initializes device to initial state
 func (dm *DummyEngine) Reset(ctx context.Context, query *model.DeviceQuery) (*model.DeviceReply, error) {
-	dm.Log.Warn("DummyDevice.Reset", "query", *query)
-	reply := &model.DeviceReply{
-		Device:  query.Device,
-		Command: model.CmdDeviceReset,
-		State:   dm.DevState,
-		ErrCode: dm.DevError,
-		ErrText: dm.DevError.String(),
-	}
-	return reply, nil
+	// TODO: Add some useful action here
+	reply := dm.GetDeviceReply(model.CmdDeviceReset)
+	dm.Log.Warn("DummyDevice.Reset", slog.Any("query", *query), slog.Any("reply", reply))
+	return &reply, nil
 }
 
 // Status returns current status of device
 func (dm *DummyEngine) Status(ctx context.Context, query *model.DeviceQuery) (*model.DeviceReply, error) {
-	dm.Log.Warn("DummyDevice.Status", "query", *query)
-	reply := &model.DeviceReply{
-		Device:  query.Device,
-		Command: model.CmdDeviceStatus,
-		State:   dm.DevState,
-		ErrCode: dm.DevError,
-		ErrText: dm.DevError.String(),
-	}
-	return reply, nil
+	// TODO: Add some useful action here
+	reply := dm.GetDeviceReply(model.CmdDeviceStatus)
+	dm.Log.Warn("DummyDevice.Status", slog.Any("query", *query), slog.Any("reply", reply))
+	return &reply, nil
 }
 
 // Execute returns result of command execution
 func (dm *DummyEngine) Execute(ctx context.Context, query *model.DeviceQuery) (*model.DeviceReply, error) {
-	dm.Log.Warn("DummyDevice.Execute", "query", *query)
-	reply := &model.DeviceReply{
-		Device:  query.Device,
-		Command: model.CmdDeviceExecute,
-		State:   dm.DevState,
-		ErrCode: dm.DevError,
-		ErrText: dm.DevError.String(),
-	}
-	return reply, nil
+	// TODO: Add some useful action here
+	reply := dm.GetDeviceReply(model.CmdDeviceExecute)
+	dm.Log.Warn("DummyDevice.Execute", slog.Any("query", *query), slog.Any("reply", reply))
+	return &reply, nil
 }

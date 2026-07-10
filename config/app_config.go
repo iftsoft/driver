@@ -1,9 +1,5 @@
 package config
 
-import (
-	"fmt"
-)
-
 type AppConfig struct {
 	Logger LoggerConfig `yaml:"logger"`
 	Device DeviceConfig `yaml:"device"`
@@ -17,19 +13,9 @@ type LoggerConfig struct {
 	Compress   bool   `yaml:"compress"`    // Compress rotated files using gzip
 }
 
-func (cfg *AppConfig) String() string {
-	str := fmt.Sprintf("Client app config: %s", cfg.Device)
-	return str
-}
-
 func GetDefaultAppConfig(devCfg DeviceConfig) AppConfig {
 	appCfg := AppConfig{
 		Device: devCfg,
 	}
 	return appCfg
-}
-
-func GetAppConfig(appPar *AppParams, devCfg DeviceConfig) (error, AppConfig) {
-	appCfg := GetDefaultAppConfig(devCfg)
-	return nil, appCfg
 }

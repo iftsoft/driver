@@ -61,7 +61,7 @@ func (app *Application) Run(ctx context.Context) error {
 	greeting := &model.GreetingInfo{
 		AppName:  params.AppName,
 		DevName:  params.DevName,
-		GrpcPort: uint32(port),
+		GrpcPort: int64(port),
 	}
 	err = callbackCli.GreetingInfo(ctx, greeting)
 
@@ -82,7 +82,9 @@ func getFreePort() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer l.Close() // Free the port right after finding it
+	defer func() {
+		_ = l.Close() // Free the port right after finding it
+	}()
 
 	// Cast the address to access the specific Port field
 	return l.Addr().(*net.TCPAddr).Port, nil

@@ -1,6 +1,10 @@
 # driver
 Device driver for Self-Service Terminal project
 
+Run GO linter
+```shell
+golangci-lint run
+```
 
 Build executables
 ```shell

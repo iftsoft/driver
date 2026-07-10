@@ -1,5 +1,6 @@
 package utils
 
+/*
 import (
 	"log"
 	"log/slog"
@@ -39,3 +40,4 @@ func SendQuitSignal(wait int) {
 		log.Fatal(err)
 	}
 }
+*/

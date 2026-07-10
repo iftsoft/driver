@@ -1,5 +1,6 @@
 package utils
 
+/*
 import (
 	"os"
 )
@@ -24,3 +25,4 @@ func CheckOrCreateFile(filename string) error {
 	}
 	return err
 }
+*/

@@ -18,11 +18,11 @@ type Callback interface {
 }
 
 type DeviceWorker interface {
-	DeviceSettings() model.SystemSetup
+	DeviceSettings() model.DeviceSetup
 	InitDevice(ctx context.Context) error
-	StartDevice(ctx context.Context, query *model.SystemConfig) error
+	StartDevice(ctx context.Context, query *model.ConfigUpdate) error
 	StopDevice(ctx context.Context) error
-	CheckDevice(ctx context.Context) (*model.SystemMetrics, error)
+	CheckDevice(ctx context.Context) (*model.DeviceMetrics, error)
 	DeviceTimer(ctx context.Context, unix int64) error
 }
 
