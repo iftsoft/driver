@@ -31,7 +31,7 @@ type DeviceDriver struct {
 }
 
 func NewDeviceDriver(setup *AppSetup, callback device.Callback, creator device.DeviceCreator) *DeviceDriver {
-	dummy := NewDummyDevice(setup.Logger)
+	dummy := NewNoopDevice(setup.Logger)
 	drv := DeviceDriver{
 		log:       setup.Logger,
 		config:    setup.Config.Device,
@@ -101,7 +101,10 @@ func (d *DeviceDriver) CreateDevice(ctx context.Context, query *model.ConfigUpda
 
 func (d *DeviceDriver) DeleteDevice(ctx context.Context) error {
 	d.log.Info("Stopping system device")
-	close(d.done)
+	if d.done != nil {
+		close(d.done)
+		d.done = nil
+	}
 	defer d.clearManagers()
 
 	err := d.worker.StopDevice(ctx)
@@ -121,7 +124,7 @@ func (d *DeviceDriver) CheckDevice(ctx context.Context) (*model.DeviceMetrics, e
 }
 
 func (d *DeviceDriver) clearManagers() {
-	dummy := NewDummyDevice(d.log)
+	dummy := NewNoopDevice(d.log)
 
 	d.mutex.Lock()
 	defer d.mutex.Unlock()

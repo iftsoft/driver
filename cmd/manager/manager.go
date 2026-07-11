@@ -10,10 +10,11 @@ import (
 )
 
 type Manager struct {
-	log  *slog.Logger
-	port int
-	name string
-	cli  *manager.ManagerClient
+	log   *slog.Logger
+	port  int
+	name  string
+	cli   *manager.ManagerClient
+	setup model.DeviceSetup
 }
 
 func NewManager(log *slog.Logger, greeting *model.GreetingInfo) *Manager {
@@ -43,25 +44,211 @@ func (cs *Manager) Process(ctx context.Context) {
 }
 
 func (cs *Manager) RunDeviceFlow(ctx context.Context) error {
-	sysCfg := &model.ConfigUpdate{
-		Device: cs.name,
-	}
-	out, err := cs.cli.SysStart(ctx, sysCfg)
+	err := cs.RunSysStart(ctx)
 	if err != nil {
-		cs.log.Error("Start device failed", slog.String("error", err.Error()))
-	} else {
-		cs.log.Debug("Start device done", slog.Any("reply", out))
+		return fmt.Errorf("run sys start failed: %w", err)
 	}
 
-	sysQry := &model.SystemQuery{
-		Device: cs.name,
-	}
-	out2, err := cs.cli.Terminate(ctx, sysQry)
+	err = cs.RunSysRestart(ctx)
 	if err != nil {
-		cs.log.Error("Terminate device failed", slog.String("error", err.Error()))
-	} else {
-		cs.log.Debug("Terminate device done", slog.Any("reply", out2))
+		return fmt.Errorf("run sys restart failed: %w", err)
+	}
+
+	err = cs.RunSysHealth(ctx)
+	if err != nil {
+		return fmt.Errorf("run sys health failed: %w", err)
+	}
+
+	if cs.setup.Supported&model.ScopeFlagDevice == model.ScopeFlagDevice {
+		err = cs.RunReset(ctx)
+		if err != nil {
+			return fmt.Errorf("run device reset failed: %w", err)
+		}
+		err = cs.RunStatus(ctx)
+		if err != nil {
+			return fmt.Errorf("run device status failed: %w", err)
+		}
+		err = cs.RunExecute(ctx)
+		if err != nil {
+			return fmt.Errorf("run execute operation failed: %w", err)
+		}
+		err = cs.RunCancel(ctx)
+		if err != nil {
+			return fmt.Errorf("run cancel execution failed: %w", err)
+		}
+	}
+
+	if cs.setup.Supported&model.ScopeFlagPrinter == model.ScopeFlagPrinter {
+		err = cs.RunInitPrinter(ctx)
+		if err != nil {
+			return fmt.Errorf("run reset printer failed: %w", err)
+		}
+		err = cs.RunPrintPage(ctx)
+		if err != nil {
+			return fmt.Errorf("run print page failed: %w", err)
+		}
+	}
+
+	if cs.setup.Supported&model.ScopeFlagReader == model.ScopeFlagReader {
+	}
+
+	if cs.setup.Supported&model.ScopeFlagValidator == model.ScopeFlagValidator {
+	}
+
+	err = cs.RunSysStop(ctx)
+	if err != nil {
+		return fmt.Errorf("run sys stop failed: %w", err)
+	}
+
+	err = cs.RunTerminate(ctx)
+	if err != nil {
+		return fmt.Errorf("run terminate failed: %w", err)
 	}
 
 	return nil
+}
+
+func (cs *Manager) RunSysStart(ctx context.Context) error {
+	query := &model.ConfigUpdate{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.SysStart(ctx, query)
+	if err != nil {
+		cs.log.Error("Start device failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Start device done", slog.Any("query", query), slog.Any("reply", reply))
+		cs.setup = reply.DeviceSetup
+	}
+	return err
+}
+
+func (cs *Manager) RunSysRestart(ctx context.Context) error {
+	query := &model.ConfigUpdate{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.SysRestart(ctx, query)
+	if err != nil {
+		cs.log.Error("Restart device failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Restart device done", slog.Any("query", query), slog.Any("reply", reply))
+		cs.setup = reply.DeviceSetup
+	}
+	return err
+}
+
+func (cs *Manager) RunSysHealth(ctx context.Context) error {
+	query := &model.SystemQuery{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.SysHealth(ctx, query)
+	if err != nil {
+		cs.log.Error("Get device health failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Get device health done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunSysStop(ctx context.Context) error {
+	query := &model.SystemQuery{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.SysStop(ctx, query)
+	if err != nil {
+		cs.log.Error("Stop device failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Stop device done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunTerminate(ctx context.Context) error {
+	query := &model.SystemQuery{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.Terminate(ctx, query)
+	if err != nil {
+		cs.log.Error("Terminate app failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Terminate app done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunCancel(ctx context.Context) error {
+	query := &model.DeviceQuery{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.Cancel(ctx, query)
+	if err != nil {
+		cs.log.Error("Cancel operation failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Cancel operation done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunReset(ctx context.Context) error {
+	query := &model.DeviceQuery{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.Reset(ctx, query)
+	if err != nil {
+		cs.log.Error("Reset device failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Reset device done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunStatus(ctx context.Context) error {
+	query := &model.DeviceQuery{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.Status(ctx, query)
+	if err != nil {
+		cs.log.Error("Get device status failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Get device status done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunExecute(ctx context.Context) error {
+	query := &model.DeviceQuery{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.Execute(ctx, query)
+	if err != nil {
+		cs.log.Error("Execute device command failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Execute device command done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunInitPrinter(ctx context.Context) error {
+	query := &model.PrinterSetup{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.InitPrinter(ctx, query)
+	if err != nil {
+		cs.log.Error("Init printer failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Init printer done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunPrintPage(ctx context.Context) error {
+	query := &model.PrinterQuery{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.PrintPage(ctx, query)
+	if err != nil {
+		cs.log.Error("Print page failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Print page done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
 }

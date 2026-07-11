@@ -18,7 +18,7 @@ type BaseEngine struct {
 	DevError  model.DevError
 	DevPrompt model.DevPrompt
 	DevAction model.DevAction
-	DevInform string
+	DevResult string
 	DevReply  string
 }
 
@@ -27,7 +27,7 @@ func (be *BaseEngine) ClearDevice() {
 	be.DevError = model.DevErrorSuccess
 	be.DevPrompt = model.DevPromptNone
 	be.DevAction = model.DevActionDoNothing
-	be.DevInform = ""
+	be.DevResult = ""
 	be.DevReply = ""
 }
 
@@ -122,22 +122,22 @@ func (be *BaseEngine) RunActionPrompt(ctx context.Context, prompt model.DevPromp
 	return err
 }
 
-func (be *BaseEngine) RunReaderReturn(ctx context.Context, inform string) error {
-	be.DevInform = inform
+func (be *BaseEngine) RunReaderReturn(ctx context.Context, result string) error {
+	be.DevResult = result
 	// ReaderReturn processing
 	var err error
-	if be.DevInform != "" {
-		query := &model.DeviceInform{
+	if be.DevResult != "" {
+		query := &model.DeviceResult{
 			DeviceNotify: be.GetDeviceNotify(),
-			InformNotify: model.InformNotify{
-				Inform: be.DevInform,
+			ResultNotify: model.ResultNotify{
+				Result: be.DevResult,
 			},
 		}
 		if be.Callback != nil {
-			err = be.Callback.ReaderReturn(ctx, query)
+			err = be.Callback.ReaderResult(ctx, query)
 		}
 		if be.Log != nil {
-			be.Log.Debug("Callback ReaderReturn", slog.Any("query", query))
+			be.Log.Debug("Callback ReaderResult", slog.Any("query", query))
 		}
 	}
 	return err

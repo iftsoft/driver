@@ -67,9 +67,9 @@ func (cs *CallbackService) ActionPrompt(ctx context.Context, value *model.Device
 	return nil
 }
 
-// ReaderReturn sends notification about device reading result
-func (cs *CallbackService) ReaderReturn(ctx context.Context, value *model.DeviceInform) error {
-	cs.log.Info("CallbackService.ReaderReturn", slog.Any("value", value))
+// ReaderResult sends notification about device reading result
+func (cs *CallbackService) ReaderResult(ctx context.Context, value *model.DeviceResult) error {
+	cs.log.Info("CallbackService.ReaderResult", slog.Any("value", value))
 	return nil
 }
 
