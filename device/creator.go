@@ -10,7 +10,6 @@ import (
 )
 
 type Callback interface {
-	//model.SystemCallback
 	model.DeviceCallback
 	model.PrinterCallback
 	model.ReaderCallback
@@ -19,7 +18,7 @@ type Callback interface {
 
 type DeviceWorker interface {
 	DeviceSettings() model.DeviceSetup
-	InitDevice(ctx context.Context) error
+	//InitDevice(ctx context.Context) error
 	StartDevice(ctx context.Context, query *model.ConfigUpdate) error
 	StopDevice(ctx context.Context) error
 	CheckDevice(ctx context.Context) (*model.DeviceMetrics, error)

@@ -77,22 +77,27 @@ func (d *DeviceDriver) CreateDevice(ctx context.Context, query *model.ConfigUpda
 	}
 	d.clearManagers()
 
+	// create device instance
 	object, err := d.creator.CreateDevice(device.CreatorParams{
 		DevName: d.devName, Logger: d.log, Config: &d.config, Callback: d.callback,
 	})
 	if err != nil {
 		return fmt.Errorf("create device error: %w", err)
 	}
+
+	// explore device interfaces
 	err = d.initManagers(object)
 	if err != nil {
 		return fmt.Errorf("init managers error: %w", err)
 	}
 
+	// setup device resources
 	err = d.worker.StartDevice(ctx, query)
 	if err != nil {
 		return fmt.Errorf("start device error: %w", err)
 	}
 
+	// start device loop
 	d.done = make(chan struct{})
 	go d.startDeviceLoop(context.Background())
 
@@ -101,12 +106,18 @@ func (d *DeviceDriver) CreateDevice(ctx context.Context, query *model.ConfigUpda
 
 func (d *DeviceDriver) DeleteDevice(ctx context.Context) error {
 	d.log.Info("Stopping system device")
-	if d.done != nil {
-		close(d.done)
-		d.done = nil
-	}
 	defer d.clearManagers()
 
+	// check for second call
+	if d.done == nil {
+		return nil
+	}
+
+	// stop device loop
+	close(d.done)
+	d.done = nil
+
+	// cleanup device resources
 	err := d.worker.StopDevice(ctx)
 	if err != nil {
 		return fmt.Errorf("stop device error: %w", err)

@@ -90,9 +90,45 @@ func (cs *Manager) RunDeviceFlow(ctx context.Context) error {
 	}
 
 	if cs.setup.Supported&model.ScopeFlagReader == model.ScopeFlagReader {
+		err = cs.RunEnterCard(ctx)
+		if err != nil {
+			return fmt.Errorf("run enter failed: %w", err)
+		}
+		err = cs.RunReadCard(ctx)
+		if err != nil {
+			return fmt.Errorf("run read card failed: %w", err)
+		}
+		err = cs.RunEjectCard(ctx)
+		if err != nil {
+			return fmt.Errorf("run eject card failed: %w", err)
+		}
+		err = cs.RunCaptureCard(ctx)
+		if err != nil {
+			return fmt.Errorf("run capture card failed: %w", err)
+		}
 	}
 
 	if cs.setup.Supported&model.ScopeFlagValidator == model.ScopeFlagValidator {
+		err = cs.RunInitValidator(ctx)
+		if err != nil {
+			return fmt.Errorf("run init validator failed: %w", err)
+		}
+		err = cs.RunDoValidate(ctx)
+		if err != nil {
+			return fmt.Errorf("run do validate failed: %w", err)
+		}
+		err = cs.RunAcceptNote(ctx)
+		if err != nil {
+			return fmt.Errorf("run accept note failed: %w", err)
+		}
+		err = cs.RunReturnNote(ctx)
+		if err != nil {
+			return fmt.Errorf("run return note failed: %w", err)
+		}
+		err = cs.RunStopValidate(ctx)
+		if err != nil {
+			return fmt.Errorf("run stop validate failed: %w", err)
+		}
 	}
 
 	err = cs.RunSysStop(ctx)
@@ -249,6 +285,128 @@ func (cs *Manager) RunPrintPage(ctx context.Context) error {
 		cs.log.Error("Print page failed", slog.String("error", err.Error()))
 	} else {
 		cs.log.Debug("Print page done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunEnterCard(ctx context.Context) error {
+	query := &model.DeviceQuery{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.EnterCard(ctx, query)
+	if err != nil {
+		cs.log.Error("Enter card failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Enter card done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunEjectCard(ctx context.Context) error {
+	query := &model.DeviceQuery{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.EjectCard(ctx, query)
+	if err != nil {
+		cs.log.Error("Eject card failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Eject card done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunCaptureCard(ctx context.Context) error {
+	query := &model.DeviceQuery{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.CaptureCard(ctx, query)
+	if err != nil {
+		cs.log.Error("Capture card failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Capture card done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunReadCard(ctx context.Context) error {
+	query := &model.DeviceQuery{
+		Device: cs.name,
+	}
+	reply, err := cs.cli.ReadCard(ctx, query)
+	if err != nil {
+		cs.log.Error("Read card failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Read card done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunInitValidator(ctx context.Context) error {
+	query := &model.ValidatorQuery{
+		Device:   cs.name,
+		Currency: model.CurrencyUSD,
+	}
+	reply, err := cs.cli.InitValidator(ctx, query)
+	if err != nil {
+		cs.log.Error("Init validator failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Init validator done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunDoValidate(ctx context.Context) error {
+	query := &model.ValidatorQuery{
+		Device:   cs.name,
+		Currency: model.CurrencyUSD,
+	}
+	reply, err := cs.cli.DoValidate(ctx, query)
+	if err != nil {
+		cs.log.Error("Start validating failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Start validating done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunAcceptNote(ctx context.Context) error {
+	query := &model.ValidatorQuery{
+		Device:   cs.name,
+		Currency: model.CurrencyUSD,
+	}
+	reply, err := cs.cli.AcceptNote(ctx, query)
+	if err != nil {
+		cs.log.Error("Accept note failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Accept note done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunReturnNote(ctx context.Context) error {
+	query := &model.ValidatorQuery{
+		Device:   cs.name,
+		Currency: model.CurrencyUSD,
+	}
+	reply, err := cs.cli.ReturnNote(ctx, query)
+	if err != nil {
+		cs.log.Error("Return note failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Return note done", slog.Any("query", query), slog.Any("reply", reply))
+	}
+	return err
+}
+
+func (cs *Manager) RunStopValidate(ctx context.Context) error {
+	query := &model.ValidatorQuery{
+		Device:   cs.name,
+		Currency: model.CurrencyUSD,
+	}
+	reply, err := cs.cli.StopValidate(ctx, query)
+	if err != nil {
+		cs.log.Error("Stop validating failed", slog.String("error", err.Error()))
+	} else {
+		cs.log.Debug("Stop validating done", slog.Any("query", query), slog.Any("reply", reply))
 	}
 	return err
 }
